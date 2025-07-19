@@ -45,7 +45,7 @@ type App struct {
 	Tags []string `json:"tags,omitempty" caddy:"namespace=tailscale.tags"`
 
 	// Nodes is a map of per-node configuration which overrides global options.
-	Nodes map[string]Node `json:"nodes,omitempty" caddy:"namespace=tailscale"`
+Nodes map[string]Node `json:"nodes,omitempty" caddy:"namespace=tailscale"`
 
 	logger *zap.Logger
 }
@@ -70,7 +70,7 @@ type Node struct {
 	Tags []string `json:"tags,omitempty" caddy:"namespace=tailscale.tags"`
 
 	// Hostname is the hostname to use when registering the node.
-	Hostname string `json:"hostname,omitempty" caddy:"namespace=tailscale.hostname"`
+Hostname string `json:"hostname,omitempty" caddy:"namespace=tailscale.hostname"`
 
 	Port uint16 `json:"port,omitempty" caddy:"namespace=tailscale.port"`
 
