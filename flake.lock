@@ -1,0 +1,81 @@
+{
+  "nodes": {
+    "devshell": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1741473158,
+        "narHash": "sha256-kWNaq6wQUbUMlPgw8Y+9/9wP0F8SHkjy24/mN3UAppg=",
+        "owner": "numtide",
+        "repo": "devshell",
+        "rev": "7c9e793ebe66bcba8292989a68c0419b737a22a0",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "devshell",
+        "type": "github"
+      }
+    },
+    "flake-compat": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1751685974,
+        "narHash": "sha256-NKw96t+BgHIYzHUjkTK95FqYRVKB8DHpVhefWSz/kTw=",
+        "ref": "refs/heads/main",
+        "rev": "549f2762aebeff29a2e5ece7a7dc0f955281a1d1",
+        "revCount": 92,
+        "type": "git",
+        "url": "https://git.lix.systems/lix-project/flake-compat"
+      },
+      "original": {
+        "type": "git",
+        "url": "https://git.lix.systems/lix-project/flake-compat"
+      }
+    },
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1761092739,
+        "narHash": "sha256-umTGIBa8+FWA+fjbpEBn7sotN6DZwNtU19silweY5Co=",
+        "owner": "msfjarvis",
+        "repo": "nixpkgs",
+        "rev": "63890fcb150799aefa3ba64a16db1e522852cbc7",
+        "type": "github"
+      },
+      "original": {
+        "owner": "msfjarvis",
+        "ref": "nixpkgs-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "root": {
+      "inputs": {
+        "devshell": "devshell",
+        "flake-compat": "flake-compat",
+        "nixpkgs": "nixpkgs",
+        "systems": "systems"
+      }
+    },
+    "systems": {
+      "locked": {
+        "lastModified": 1687694171,
+        "narHash": "sha256-m4E0xN69qKj/oKOj8OtiZcSFpFlO8paI6E3Wo5oXDJc=",
+        "owner": "msfjarvis",
+        "repo": "flake-systems",
+        "rev": "7876462a5f60841e8b2712ad20dc18470f448e8d",
+        "type": "github"
+      },
+      "original": {
+        "owner": "msfjarvis",
+        "repo": "flake-systems",
+        "type": "github"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}
