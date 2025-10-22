@@ -34,6 +34,7 @@ import (
 )
 
 func init() {
+	caddy.RegisterModule(TailscaleDirective{})
 	caddy.RegisterNetwork("tailscale", getTCPListener)
 	caddy.RegisterNetwork("tailscale+tls", getTLSListener)
 	caddy.RegisterNetwork("tailscale/udp", getUDPListener)
@@ -317,6 +318,13 @@ func getNode(ctx caddy.Context, name string) (*tailscaleNode, error) {
 var repl = caddy.NewReplacer()
 
 func getAuthKey(name string, app *App) (string, error) {
+	// Check site-specific configuration first
+	if siteNode, exists := getSiteConfig(name); exists {
+		if siteNode.AuthKey != "" {
+			return repl.ReplaceOrErr(siteNode.AuthKey, true, true)
+		}
+	}
+
 	if node, ok := app.Nodes[name]; ok {
 		if node.AuthKey != "" {
 			return repl.ReplaceOrErr(node.AuthKey, true, true)
@@ -393,6 +401,13 @@ func resolveAuthKey(ctx caddy.Context, name string, v string, app *App) (string,
 }
 
 func getControlURL(name string, app *App) (string, error) {
+	// Check site-specific configuration first
+	if siteNode, exists := getSiteConfig(name); exists {
+		if siteNode.ControlURL != "" {
+			return repl.ReplaceOrErr(siteNode.ControlURL, true, true)
+		}
+	}
+
 	if node, ok := app.Nodes[name]; ok {
 		if node.ControlURL != "" {
 			return repl.ReplaceOrErr(node.ControlURL, true, true)
@@ -402,6 +417,13 @@ func getControlURL(name string, app *App) (string, error) {
 }
 
 func getEphemeral(name string, app *App) bool {
+	// Check site-specific configuration first
+	if siteNode, exists := getSiteConfig(name); exists {
+		if v, ok := siteNode.Ephemeral.Get(); ok {
+			return v
+		}
+	}
+
 	if node, ok := app.Nodes[name]; ok {
 		if v, ok := node.Ephemeral.Get(); ok {
 			return v
@@ -411,10 +433,19 @@ func getEphemeral(name string, app *App) bool {
 }
 
 func getTags(name string, app *App) []string {
-	if node, ok := app.Nodes[name]; ok && len(node.Tags) > 0 {
-		merged := make([]string, 0, len(app.Tags)+len(node.Tags))
+	var nodeTags []string
+
+	// Check site-specific configuration first
+	if siteNode, exists := getSiteConfig(name); exists && len(siteNode.Tags) > 0 {
+		nodeTags = siteNode.Tags
+	} else if node, ok := app.Nodes[name]; ok && len(node.Tags) > 0 {
+		nodeTags = node.Tags
+	}
+
+	if len(nodeTags) > 0 {
+		merged := make([]string, 0, len(app.Tags)+len(nodeTags))
 		merged = append(merged, app.Tags...)
-		merged = append(merged, node.Tags...)
+		merged = append(merged, nodeTags...)
 
 		slices.Sort(merged)
 		return slices.Compact(merged)
@@ -426,6 +457,14 @@ func getHostname(name string, app *App) (string, error) {
 	if app == nil {
 		return name, nil
 	}
+
+	// Check site-specific configuration first
+	if siteNode, exists := getSiteConfig(name); exists {
+		if siteNode.Hostname != "" {
+			return repl.ReplaceOrErr(siteNode.Hostname, true, true)
+		}
+	}
+
 	if node, ok := app.Nodes[name]; ok {
 		if node.Hostname != "" {
 			return repl.ReplaceOrErr(node.Hostname, true, true)
@@ -436,6 +475,13 @@ func getHostname(name string, app *App) (string, error) {
 }
 
 func getPort(name string, app *App) uint16 {
+	// Check site-specific configuration first
+	if siteNode, exists := getSiteConfig(name); exists {
+		if siteNode.Port != 0 {
+			return siteNode.Port
+		}
+	}
+
 	if node, ok := app.Nodes[name]; ok {
 		return node.Port
 	}
@@ -444,6 +490,13 @@ func getPort(name string, app *App) uint16 {
 }
 
 func getStateDir(name string, app *App) (string, error) {
+	// Check site-specific configuration first
+	if siteNode, exists := getSiteConfig(name); exists {
+		if siteNode.StateDir != "" {
+			return repl.ReplaceOrErr(siteNode.StateDir, true, true)
+		}
+	}
+
 	if node, ok := app.Nodes[name]; ok {
 		if node.StateDir != "" {
 			return repl.ReplaceOrErr(node.StateDir, true, true)
@@ -468,6 +521,13 @@ func getStateDir(name string, app *App) (string, error) {
 }
 
 func getWebUI(name string, app *App) bool {
+	// Check site-specific configuration first
+	if siteNode, exists := getSiteConfig(name); exists {
+		if v, ok := siteNode.WebUI.Get(); ok {
+			return v
+		}
+	}
+
 	if node, ok := app.Nodes[name]; ok {
 		if v, ok := node.WebUI.Get(); ok {
 			return v

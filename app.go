@@ -6,8 +6,6 @@ package tscaddy
 // app.go contains App and Node, which provide global configuration for registering Tailscale nodes.
 
 import (
-	"strconv"
-
 	"github.com/caddyserver/caddy/v2"
 	"github.com/caddyserver/caddy/v2/caddyconfig"
 	"github.com/caddyserver/caddy/v2/caddyconfig/caddyfile"
@@ -106,62 +104,11 @@ func parseAppConfig(d *caddyfile.Dispenser, _ any) (any, error) {
 	}
 	if !d.Next() {
 		return app, d.ArgErr()
-
 	}
 
-	for d.NextBlock(0) {
-		val := d.Val()
-
-		switch val {
-		case "auth_key":
-			if !d.NextArg() {
-				return nil, d.ArgErr()
-			}
-			app.DefaultAuthKey = d.Val()
-		case "control_url":
-			if !d.NextArg() {
-				return nil, d.ArgErr()
-			}
-			app.ControlURL = d.Val()
-		case "ephemeral":
-			if d.NextArg() {
-				v, err := strconv.ParseBool(d.Val())
-				if err != nil {
-					return nil, d.WrapErr(err)
-				}
-				app.Ephemeral = v
-			} else {
-				app.Ephemeral = true
-			}
-		case "state_dir":
-			if !d.NextArg() {
-				return nil, d.ArgErr()
-			}
-			app.StateDir = d.Val()
-		case "webui":
-			if d.NextArg() {
-				v, err := strconv.ParseBool(d.Val())
-				if err != nil {
-					return nil, d.WrapErr(err)
-				}
-				app.WebUI = v
-			} else {
-				app.WebUI = true
-			}
-		case "tags":
-			for d.NextArg() {
-				app.Tags = append(app.Tags, d.Val())
-			}
-		default:
-			node, err := parseNodeConfig(d)
-			if app.Nodes == nil {
-				app.Nodes = map[string]Node{}
-			}
-			if err != nil {
-				return nil, err
-			}
-			app.Nodes[node.name] = node
-		}
+	err := parseAppOptions(d, app)
+	if err != nil {
+		return nil, err
 	}
 
 	return httpcaddyfile.App{
@@ -171,78 +118,7 @@ func parseAppConfig(d *caddyfile.Dispenser, _ any) (any, error) {
 }
 
 func parseNodeConfig(d *caddyfile.Dispenser) (Node, error) {
-	name := d.Val()
-	segment := d.NewFromNextSegment()
-
-	if !segment.Next() {
-		return Node{}, d.ArgErr()
-	}
-
-	node := Node{name: name}
-	for nesting := segment.Nesting(); segment.NextBlock(nesting); {
-		val := segment.Val()
-		switch val {
-		case "auth_key":
-			if !segment.NextArg() {
-				return node, segment.ArgErr()
-			}
-			node.AuthKey = segment.Val()
-		case "control_url":
-			if !segment.NextArg() {
-				return node, segment.ArgErr()
-			}
-			node.ControlURL = segment.Val()
-		case "ephemeral":
-			if segment.NextArg() {
-				v, err := strconv.ParseBool(segment.Val())
-				if err != nil {
-					return node, segment.WrapErr(err)
-				}
-				node.Ephemeral = opt.NewBool(v)
-			} else {
-				node.Ephemeral = opt.NewBool(true)
-			}
-		case "port":
-			if segment.NextArg() {
-				v, err := strconv.ParseUint(segment.Val(), 10, 16)
-				if err != nil {
-					return node, segment.WrapErr(err)
-				}
-				node.Port = uint16(v)
-			} else {
-				node.Port = 0
-			}
-
-		case "hostname":
-			if !segment.NextArg() {
-				return node, segment.ArgErr()
-			}
-			node.Hostname = segment.Val()
-		case "state_dir":
-			if !segment.NextArg() {
-				return node, segment.ArgErr()
-			}
-			node.StateDir = segment.Val()
-		case "webui":
-			if segment.NextArg() {
-				v, err := strconv.ParseBool(segment.Val())
-				if err != nil {
-					return node, segment.WrapErr(err)
-				}
-				node.WebUI = opt.NewBool(v)
-			} else {
-				node.WebUI = opt.NewBool(true)
-			}
-		case "tags":
-			for segment.NextArg() {
-				node.Tags = append(node.Tags, segment.Val())
-			}
-		default:
-			return node, segment.Errf("unrecognized subdirective: %s", segment.Val())
-		}
-	}
-
-	return node, nil
+	return parseNamedNodeConfig(d)
 }
 
 var (
