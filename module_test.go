@@ -254,12 +254,17 @@ func Test_GetStateDir(t *testing.T) {
 	configDir := must.Get(os.UserConfigDir())
 	tests := map[string]struct {
 		env        map[string]string // env vars to set
-		defaultDir string            // default state_dir in caddy config
-		nodeDir    string            // node state_dir in caddy config
+		ephemeral  bool
+		defaultDir string // default state_dir in caddy config
+		nodeDir    string // node state_dir in caddy config
 		want       string
 	}{
 		"default statedir from node name": {
 			want: filepath.Join(configDir, "tsnet-caddy-"+nodeName),
+		},
+		"ephemeral nodes are stateless by default": {
+			ephemeral: true,
+			want:      "",
 		},
 		"custom hostname from app config": {
 			env:        map[string]string{"TMPDIR": "/tmp/"},
@@ -276,8 +281,9 @@ func Test_GetStateDir(t *testing.T) {
 	for tn, tt := range tests {
 		t.Run(tn, func(t *testing.T) {
 			app := &App{
-				StateDir: tt.defaultDir,
-				Nodes:    make(map[string]Node),
+				Ephemeral: tt.ephemeral,
+				StateDir:  tt.defaultDir,
+				Nodes:     make(map[string]Node),
 			}
 			if tt.nodeDir != "" {
 				app.Nodes[nodeName] = Node{

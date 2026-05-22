@@ -30,6 +30,7 @@ import (
 	"golang.org/x/oauth2/clientcredentials"
 	"tailscale.com/client/tailscale"
 	"tailscale.com/hostinfo"
+	"tailscale.com/ipn/store"
 	"tailscale.com/tsnet"
 )
 
@@ -300,7 +301,12 @@ func getNode(ctx caddy.Context, name string) (*tailscaleNode, error) {
 		if s.Dir, err = getStateDir(name, app); err != nil {
 			return nil, err
 		}
-		if err := os.MkdirAll(s.Dir, 0700); err != nil {
+		if s.Dir == "" {
+			s.Store, err = store.New(app.logger.Sugar().Debugf, "mem:")
+			if err != nil {
+				return nil, err
+			}
+		} else if err := os.MkdirAll(s.Dir, 0700); err != nil {
 			return nil, err
 		}
 
@@ -509,6 +515,10 @@ func getStateDir(name string, app *App) (string, error) {
 			return "", err
 		}
 		return filepath.Join(s, name), nil
+	}
+
+	if getEphemeral(name, app) {
+		return "", nil
 	}
 
 	// By default, tsnet will use the name of the running program in the state directory,
