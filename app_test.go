@@ -132,6 +132,25 @@ func Test_ParseApp(t *testing.T) {
 
 }
 
+func Test_ParseTags(t *testing.T) {
+	d := caddyfile.NewTestDispenser(`
+		tailscale my-service {
+			tags tag:services tag:web
+		}
+	`)
+	got, err := parseTagsConfig(httpcaddyfile.Helper{Dispenser: d})
+	if err != nil {
+		t.Fatal(err)
+	}
+	tags := got.(*Tags)
+	if tags.Name != "my-service" {
+		t.Errorf("Name = %q, want %q", tags.Name, "my-service")
+	}
+	if diff := cmp.Diff([]string{"tag:services", "tag:web"}, tags.Tags); diff != "" {
+		t.Errorf("Tags mismatch (-want +got):\n%s", diff)
+	}
+}
+
 func compareJSON(s1, s2 string, t *testing.T) string {
 	var v1, v2 map[string]any
 	if err := json.Unmarshal([]byte(s1), &v1); err != nil {

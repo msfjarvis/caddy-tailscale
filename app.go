@@ -6,19 +6,24 @@ package tscaddy
 // app.go contains App and Node, which provide global configuration for registering Tailscale nodes.
 
 import (
+	"net/http"
 	"strconv"
 
 	"github.com/caddyserver/caddy/v2"
 	"github.com/caddyserver/caddy/v2/caddyconfig"
 	"github.com/caddyserver/caddy/v2/caddyconfig/caddyfile"
 	"github.com/caddyserver/caddy/v2/caddyconfig/httpcaddyfile"
+	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
 	"go.uber.org/zap"
 	"tailscale.com/types/opt"
 )
 
 func init() {
 	caddy.RegisterModule(App{})
+	caddy.RegisterModule(Tags{})
 	httpcaddyfile.RegisterGlobalOption("tailscale", parseAppConfig)
+	httpcaddyfile.RegisterHandlerDirective("tailscale", parseTagsConfig)
+	httpcaddyfile.RegisterDirectiveOrder("tailscale", httpcaddyfile.Before, "respond")
 }
 
 // App is the Tailscale Caddy app used to configure Tailscale nodes.
@@ -98,6 +103,55 @@ func (t *App) Start() error {
 
 func (t *App) Stop() error {
 	return nil
+}
+
+// Tags configures tags for a Tailscale node from a site block.
+type Tags struct {
+	Name string   `json:"name,omitempty"`
+	Tags []string `json:"tags,omitempty"`
+}
+
+func (Tags) CaddyModule() caddy.ModuleInfo {
+	return caddy.ModuleInfo{
+		ID:  "http.handlers.tailscale",
+		New: func() caddy.Module { return new(Tags) },
+	}
+}
+
+func (t *Tags) Provision(ctx caddy.Context) error {
+	appIface, err := ctx.App("tailscale")
+	if err != nil {
+		return err
+	}
+	app := appIface.(*App)
+	if app.Nodes == nil {
+		app.Nodes = make(map[string]Node)
+	}
+	node := app.Nodes[t.Name]
+	node.Tags = t.Tags
+	app.Nodes[t.Name] = node
+	return nil
+}
+
+func (t *Tags) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
+	return next.ServeHTTP(w, r)
+}
+
+func parseTagsConfig(h httpcaddyfile.Helper) (caddyhttp.MiddlewareHandler, error) {
+	var t Tags
+	if !h.Next() || !h.NextArg() {
+		return nil, h.ArgErr()
+	}
+	t.Name = h.Val()
+	for h.NextBlock(0) {
+		switch h.Val() {
+		case "tags":
+			t.Tags = h.RemainingArgs()
+		default:
+			return nil, h.Errf("unknown subdirective %q", h.Val())
+		}
+	}
+	return &t, nil
 }
 
 func parseAppConfig(d *caddyfile.Dispenser, _ any) (any, error) {
