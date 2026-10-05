@@ -45,12 +45,9 @@
             ];
 
             packages = with pkgs; [
-              gcc
-              git
               go-outline
               go_1_27
               gopls
-              xcaddy
             ];
           };
         }
